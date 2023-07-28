@@ -4,11 +4,11 @@
 #define WIFI_SSID "DRIFTYY777 7440"
 #define WIFI_PASSWORD "this is password"
 
-#define API_KEY "AIzaSyBfppxm4qqUo60xeV2k7Ztr9z2qHc0lT6I"
-#define FIREBASE_PROJECT_ID "that-esp"
+#define API_KEY "api goes here"
+#define FIREBASE_PROJECT_ID "project id or project name like that-esp"
 
-#define USER_EMAIL "gbjhasd344@gmail.com"
-#define USER_PASSWORD "mmmmmmmmmm777"
+#define USER_EMAIL "email.com"
+#define USER_PASSWORD "password"
 
 String documentPath = "kharwan/Roof_1";
 String documentPath2 = "kharwan/Server_";
