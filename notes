@@ -1,0 +1,6 @@
+upload Details about wifi // done
+dissable wifi and firebase based on battery values // done
+decrease upload and sd write time depends on LDR value to prevent battery over drain 
+4 add critical mode for continous data logging without even deep sleep //skipped
+add wireless programing mode
+
