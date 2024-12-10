@@ -87,11 +87,16 @@ void writeDataSDFun(void *pvParameters)
 {
     char data[100];
     char tempSTR[10], humiSTR[10];
+
+    char batteryVoltage[10], batteryPercentage[10];
+
     for (;;)
     {
-        float humi = NAN, temp = NAN;
+        float humi = NAN, temp = NAN, voltage = NAN, current = NAN;
         temp = dht.readTemperature();
         humi = dht.readHumidity();
+        voltage = battery.getBatteryVoltage();
+        current = battery.batteyPercentage();
 
         if (isnan(temp) || isnan(humi))
         {
@@ -101,7 +106,9 @@ void writeDataSDFun(void *pvParameters)
         }
         dtostrf(temp, 6, 2, tempSTR);
         dtostrf(humi, 6, 2, humiSTR);
-        sprintf(data, "%s, %s, %s\n", local_time.getFormattedTime().c_str(), tempSTR, humiSTR);
+        dtostrf(voltage, 6, 2, batteryVoltage);
+        dtostrf(current, 6, 2, batteryPercentage);
+        sprintf(data, "%s, %s, %s, %s, %s\n", local_time.getFormattedTime().c_str(), tempSTR, humiSTR, batteryVoltage, batteryPercentage);
         dataBuffer += data;
 
         // Write to storage only every 10 readings
@@ -175,6 +182,7 @@ void setup()
         local_time.begin();
         local_time.syncWithNTP();
     }
+    delay(2000); // for being stable
 
     xTaskCreatePinnedToCore(
         uploadDataFun,
