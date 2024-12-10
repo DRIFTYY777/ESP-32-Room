@@ -3,7 +3,6 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
-# skip credentials.h file
-src/credentials.h
+.src/credentials.h
 
 

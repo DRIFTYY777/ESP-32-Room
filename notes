@@ -1,6 +1,12 @@
-upload Details about wifi // done
-dissable wifi and firebase based on battery values // done
-decrease upload and sd write time depends on LDR value to prevent battery over drain 
-4 add critical mode for continous data logging without even deep sleep //skipped
-add wireless programing mode
-
+Upload Details about wifi (done)
+Dissable wifi and firebase based on battery values (done)
+Decrease upload and external flash write time depends on LDR value to prevent battery over drain (opt)
+Add critical mode for continous data logging without even deep sleep //skipped
+Add wireless programing mode
+FCM-esp32
+FS ota (File system over the wifi)
+Watertank (opt)
+Internal RTC for local time (done)
+Wifi only on  or via button
+Report logs on external flash 
+ 
