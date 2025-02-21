@@ -6,6 +6,7 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <esp_task_wdt.h>
+
 #elif ESP8266
 #define ESPFS LittleFS
 #define ESPMAC (Sprintf("%06" PRIx32, ESP.getChipId()))
@@ -22,6 +23,9 @@ constexpr auto WIFI_AUTH_WPA2_ENTERPRISE = -1337; // not available on ESP8266
 #else
 #error "This library only supports ESP32 and ESP8266"
 #endif
+
+#include "time/time.h"
+
 #include <DNSServer.h>
 #include <limits.h>
 #include <vector>
@@ -526,21 +530,57 @@ bool WiFiSettingsClass::connect(bool portal, int wait_seconds)
         delay(onWaitLoop ? onWaitLoop() : 100);
     }
 
+    // if (WiFi.status() != WL_CONNECTED)
+    // {
+    //     Serial.println(F(" failed."));
+    //     if (onFailure)
+    //         onFailure();
+    //     if (portal)
+    //         this->portal();
+    //     return false;
+    // }
+
+    // Serial.println(WiFi.localIP().toString());
+    // if (onSuccess)
+    //     onSuccess();
+    // return true;
+
     if (WiFi.status() != WL_CONNECTED)
     {
-        Serial.println(F(" failed."));
-        if (onFailure)
-            onFailure();
-        if (portal)
-            this->portal();
-        return false;
+        // get all the networks
+        int n = WiFi.scanNetworks();
+        // compare the network names with stored one
+        for (int i = 0; i < n; ++i)
+        {
+            if (WiFi.SSID(i) == ssid)
+            {
+                // if found, connect to the network
+                if (WiFi.begin(ssid.c_str(), pw.c_str()))
+                {
+                    Serial.println(F(" connected."));
+                    if (onSuccess)
+                        onSuccess();
+                    return true;
+                }
+                else
+                {
+                    Serial.println(F(" failed."));
+                    if (onFailure)
+                        onFailure();
+                    if (portal)
+                        this->portal();
+                    return false;
+                }
+                break;
+            }
+        }
     }
-
-    Serial.println(WiFi.localIP().toString());
-    if (onSuccess)
-        onSuccess();
-    return true;
 }
+
+/*
+    wifi off -- no ssid
+    wrong pass -- ssid is true but pass is wrong
+*/
 
 void WiFiSettingsClass::begin()
 {
@@ -578,7 +618,8 @@ void WiFiSettingsClass::begin()
         {
             // With regular 'init' semantics, the password would be changed
             // all the time.
-            password = pwgen();
+            // password = pwgen();
+            password = "XC-mho!-z5mHH8E9";
             params.back()->set(password);
             params.back()->store();
         }

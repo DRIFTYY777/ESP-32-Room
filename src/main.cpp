@@ -1,3 +1,8 @@
+/*
+    ssdi- esp32- something
+    Password - XC-mho!-z5mHH8E9
+*/
+
 #include <freertos/FreeRTOS.h>
 #include "wifi/WiFiSettings.h"
 #include <ArduinoOTA.h>
@@ -5,25 +10,19 @@
 #include <battery/battery.h>
 #include <DHT.h>
 #include "pins.h"
-#include <storage/storage.h>
+#include "storage/storage.h"
 #include "SPIFFS.h"
 #include <time/time.h>
+#include <credentials.h>
+#include "report/report.h"
 
 // https://github.com/espressif/arduino-esp32/blob/master/libraries/ArduinoOTA/src/ArduinoOTA.cpp
-
-enum modes
-{
-    SLOW = 5,
-    FAST = 1,
-};
 
 DHT dht(DHT11PIN, DHT11);
 BATTERY battery;
 FirebaseServer server;
-LocalTime local_time;
-Storage storage;
-
-const uint64_t sleepInterval = 20 * 60 * 1000000ULL; //(20 minutes)
+// LocalTime local_time;
+// Storage storage;
 
 TaskHandle_t UploadDataCore;
 TaskHandle_t writeDataSDCore;
@@ -38,6 +37,11 @@ void readDHTValues(float &temp, float &humi)
 void getWIFI(int32_t &rssi)
 {
     rssi = WiFi.RSSI();
+}
+
+void print_IP()
+{
+    ESP_LOGI("MAIN", "IP Address: %s", WiFi.localIP().toString().c_str());
 }
 
 void getPower(float &voltage, float &current)
@@ -63,21 +67,14 @@ void uploadDataFun(void *pvParameters)
             ESP_LOGD("MAIN", "Temperature: %f, Humidity: %f, RSSI: %d, Voltage: %f, Current: %f", temp, humi, rssi, voltage, current);
 
             server.write_data(temp, humi, rssi, voltage, current);
-            vTaskDelay(20000 / portTICK_PERIOD_MS);
+
+            esp_sleep_enable_timer_wakeup(60000000); // 1 minute in microseconds
+            vTaskDelay(10 / portTICK_PERIOD_MS);
         }
         else
         {
-            digitalWrite(LED, HIGH);
-            delay(600);
-            digitalWrite(LED, LOW);
-        }
-        if (voltage > 2.5)
-        {
-            vTaskDelay(modes::FAST);
-        }
-        else
-        {
-            vTaskDelay(modes::SLOW);
+            report.printReport("MAIN", "void uploadDataFun(void *pvParameters) == WiFi not connected");
+            vTaskDelay(300000 / portTICK_PERIOD_MS);
         }
     }
 }
@@ -101,7 +98,9 @@ void writeDataSDFun(void *pvParameters)
         if (isnan(temp) || isnan(humi))
         {
             ESP_LOGE("MAIN", "Failed to read from DHT sensor!");
-            vTaskDelay(5000 / portTICK_PERIOD_MS);
+            // report.printReport("MAIN", "Failed to read from DHT sensor!");
+            // 5 min delay
+            vTaskDelay(300000 / portTICK_PERIOD_MS);
             continue;
         }
         dtostrf(temp, 6, 2, tempSTR);
@@ -121,22 +120,52 @@ void writeDataSDFun(void *pvParameters)
                 xSemaphoreGive(sdCardMutex);
             }
         }
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        vTaskDelay(300000 / portTICK_PERIOD_MS);
     }
 }
 
 void setup_ota()
 {
-    ArduinoOTA.setHostname(WiFiSettings.hostname.c_str());
-    ArduinoOTA.setPassword(WiFiSettings.password.c_str());
-    ArduinoOTA.begin();
+
+    WiFiSettings.secure = true;
+    WiFiSettings.onPortal = []()
+    {
+        ArduinoOTA.setHostname(WiFiSettings.hostname.c_str());
+        ArduinoOTA.setPassword(WiFiSettings.password.c_str());
+        ArduinoOTA.begin();
+    };
+    WiFiSettings.onPortalWaitLoop = []()
+    {
+        ArduinoOTA.handle();
+    };
+    WiFiSettings.connect();
+    ESP_LOGI("WiFi", "Password  %s", WiFiSettings.password.c_str());
+}
+
+void getCpuTemp()
+{
+    // Get the CPU temperature
+    float temp = (float)temperatureRead() / 100;
+    ESP_LOGI("MAIN", "CPU Temperature: %f", temp);
+}
+
+void indicator(int times)
+{
+    for (int i = 0; i < times; i++)
+    {
+        digitalWrite(LED, HIGH);
+        delay(100);
+        digitalWrite(LED, LOW);
+        delay(100);
+    }
 }
 
 void setup()
 {
 
     Serial.begin(115200);
-
+    pinMode(LED, OUTPUT);
+    indicator(5);
     if (!SPIFFS.begin(true))
     {
         ESP_LOGE("MAIN", "Failed to mount SPIFFS");
@@ -145,12 +174,16 @@ void setup()
     else
         ESP_LOGE("MAIN", "SPIFFS mounted successfully");
 
+    dht.begin();
     battery.init();
     storage.init();
+    report.begin();
+
     if (!storage.file_exists(FILE_PATH))
     {
         storage.create_file(FILE_PATH);
     }
+
     sdCardMutex = xSemaphoreCreateMutex();
     if (sdCardMutex == NULL)
     {
@@ -160,20 +193,6 @@ void setup()
         // } // Halt execution if mutex creation fails
     }
 
-    dht.begin();
-
-    WiFiSettings.secure = true;
-    WiFiSettings.onPortal = []()
-    {
-        setup_ota();
-    };
-    WiFiSettings.onPortalWaitLoop = []()
-    {
-        ArduinoOTA.handle();
-    };
-    WiFiSettings.connect();
-    ESP_LOGI("WiFi", "Password  %s", WiFiSettings.password.c_str());
-
     setup_ota();
 
     if (WiFi.status() == WL_CONNECTED)
@@ -182,7 +201,12 @@ void setup()
         local_time.begin();
         local_time.syncWithNTP();
     }
+
     delay(2000); // for being stable
+
+    print_IP();
+
+    ArduinoOTA.begin();
 
     xTaskCreatePinnedToCore(
         uploadDataFun,
@@ -192,7 +216,6 @@ void setup()
         2,
         &UploadDataCore,
         0);
-
     xTaskCreatePinnedToCore(
         writeDataSDFun,
         "Task2",
@@ -203,24 +226,20 @@ void setup()
         1);
     delay(1000);
 }
-
 void loop()
 {
-
     if (local_time.isWiFiConnected())
     {
         local_time.syncWithNTP();
     }
 
-    String time = local_time.getFormattedTime();
-    int hour = time.substring(0, 2).toInt();
+    String time = local_time.getFormattedTime(); // Assuming local_time is an instance of an RTC or NTP time object
+    int hour = time.substring(0, 2).toInt();     // Extract the hour part of the time
 
-    // if (hour >= 20 || hour < 6)
-    // {
-    //     // Enter sleep mode at night
-    //     // wake esp after 20 minutes for next reading and upload, write to SD only in night then go to sleep again
-    //     esp_sleep_enable_timer_wakeup(sleepInterval);
-    //     esp_deep_sleep_start();
-    // }
+    // Start deep sleep
+    ESP_LOGI("MAIN", "Entering Deep Sleep Mode");
+    esp_sleep_enable_timer_wakeup(sleepInterval); // 20 minutes in microseconds
+    esp_deep_sleep_start();
+
     ArduinoOTA.handle();
 }

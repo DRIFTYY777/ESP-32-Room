@@ -3,6 +3,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp32-hal-gpio.h>
+#include <report/report.h>
 
 static const char *TAG = "Battery";
 
@@ -24,41 +25,48 @@ void BATTERY::activateBatteryPin(bool activate)
 
 void BATTERY::init()
 {
-
-    // // init BATT_PIN_ACT for mosfet driver to enable battery voltage reading esp-idf
-    // gpio_config_t io_conf;
-    // //interrupt of rising edge
-    // io_conf.intr_type == GPIO_PIN_INTR_DISABLE;
-    // //bit mask of the pins, use GPIO4/5 here
-    // io_conf.pin_bit_mask = (1ULL << BATT_PIN_ACT);
-    // //set as input mode
-    // io_conf.mode = GPIO_MODE_OUTPUT;
-    // //enable pull-up mode
-    // io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
-
-    // init BATT_PIN_ACT ardunio
     pinMode(BATT_PIN_ACT, OUTPUT);
+    pinMode(BATT_CHARGING_PIN, INPUT);
 
-    // Configure the ADC width and channel for reading battery voltage (using GPIO 36)
-    adc1_config_width(ADC_WIDTH_12Bit);                         // 12-bit ADC width
-    adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_DB_12); // GPIO 36 (ADC1_CHANNEL_0)
+    // Configure ADC
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_DB_12);
 
-    // Initialize ADC calibration characteristics
     adc_chars = (esp_adc_cal_characteristics_t *)calloc(1, sizeof(esp_adc_cal_characteristics_t));
+    if (!adc_chars)
+    {
+        ESP_LOGE(TAG, "Failed to allocate memory for ADC characteristics");
+        report.printReport(TAG, "Failed to allocate memory for ADC characteristics");
+        return;
+    }
+
     esp_adc_cal_value_t val_type = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_12, ADC_WIDTH_BIT_12, DEFAULT_VREF, adc_chars);
 
-    if (val_type == ESP_ADC_CAL_VAL_EFUSE_VREF)
+    switch (val_type)
     {
-        ESP_LOGI(TAG, "eFuse Vref");
+    case ESP_ADC_CAL_VAL_EFUSE_VREF:
+        ESP_LOGI(TAG, "ADC calibration: eFuse Vref");
+        break;
+    case ESP_ADC_CAL_VAL_EFUSE_TP:
+        ESP_LOGI(TAG, "ADC calibration: Two Point");
+        break;
+    default:
+        ESP_LOGW(TAG, "ADC calibration: Using default Vref");
+        break;
     }
-    else if (val_type == ESP_ADC_CAL_VAL_EFUSE_TP)
+}
+
+void BATTERY::batteryTemperature()
+{
+}
+
+bool BATTERY::isCharging()
+{
+    if (digitalRead(BATT_CHARGING_PIN) == HIGH)
     {
-        ESP_LOGI(TAG, "Two Point");
+        return true;
     }
-    else
-    {
-        ESP_LOGI(TAG, "Default");
-    }
+    return false;
 }
 
 float BATTERY::getBatteryVoltage()

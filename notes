@@ -9,4 +9,4 @@ Watertank (opt)
 Internal RTC for local time (done)
 Wifi only on  or via button
 Report logs on external flash 
- 
+WIfi ota only when password is wrong

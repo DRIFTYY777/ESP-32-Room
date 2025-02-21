@@ -36,8 +36,9 @@ public:
     size_t free_space();
     size_t file_size(const char *filepath);
 
-
     bool file_exists(const char *filepath);
 };
+
+extern Storage storage;
 
 #endif

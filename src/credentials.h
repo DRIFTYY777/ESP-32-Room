@@ -2,10 +2,10 @@
 #define __CREDENTIALS_H__
 
 
-#define API_KEY ""
+#define API_KEY "AIzaSyBfppxm4qqUo60xeV2k7Ztr9z2qHc0lT6I"
 #define FIREBASE_PROJECT_ID "that-esp"
-#define USER_EMAIL ""
-#define USER_PASSWORD ""
+#define USER_EMAIL "gbjhasd344@gmail.com"
+#define USER_PASSWORD "mmmmmmmmmm777"
 
 #define SERVER_KEY "AAAAA3cxV94:APA91bFE_N0yvhj99DZAWpTW6VEpQVyYPXCJnIsmhlQ2TmLVeYofS3MIPTf4uHZIER90Y33qD8d6MnziAZQd_itoqBuGwbZg0VYLDOQ1FNZ0_ADq0uPhV0NysbunCTNcTg8mNxttrRCc"
 
@@ -15,5 +15,10 @@ const char PRIVATE_KEY[] PROGMEM = "-----BEGIN PRIVATE KEY-----XXXXXXXXXXXX-----
 
 //FILE_PATH
 #define FILE_PATH "/data.txt"
+#define REPORT_FILE_PATH "/report.txt"
+
+// Sleep interval
+const uint64_t sleepInterval = 20 * 60 * 1000000ULL; //(20 minutes)
+
 
 #endif

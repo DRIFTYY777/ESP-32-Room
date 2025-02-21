@@ -190,3 +190,6 @@ bool Storage::file_exists(const char *filepath)
     // Check if a file exists on external flash
     return SPIFFS.exists(filepath);
 }
+
+
+Storage storage; 

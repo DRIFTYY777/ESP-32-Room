@@ -1,8 +1,8 @@
 #ifndef __PINS_H__
 #define __PINS_H__
 
-#define DHT11PIN 4
-#define LED 2
+#define DHT11PIN 0
+#define LED 13
 
 /* external flash*/
 #define FLASH_CS 5
@@ -16,6 +16,7 @@
 
 #define BATT_PIN 34
 #define BATT_PIN_ACT 12
+#define BATT_CHARGING_PIN 33
 
 #define LDR_PIN 32
 

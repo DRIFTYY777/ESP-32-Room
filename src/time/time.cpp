@@ -1,4 +1,5 @@
 #include "time.h"
+#include "report/report.h"
 
 static const char *TAG = "LOCAL_TIME";
 
@@ -28,6 +29,7 @@ void LocalTime::syncWithNTP()
     {
         // Serial.println("WiFi not connected. Cannot sync with NTP.");
         ESP_LOGD(TAG, "WiFi not connected. Cannot sync with NTP.");
+        report.printReport(TAG, "WiFi not connected. Cannot sync with NTP.", LocalTime::getFormattedTime());
     }
 }
 
@@ -45,3 +47,22 @@ bool LocalTime::isWiFiConnected()
 {
     return WiFi.status() == WL_CONNECTED;
 }
+
+String LocalTime::timeAMPM()
+{
+    char buffer[20];
+    snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d %s",
+             time.getHour(), time.getMinute(), time.getSecond(),
+             time.getHour() >= 12 ? "PM" : "AM");
+    return String(buffer);
+}
+
+String LocalTime::time24()
+{
+    char buffer[20];
+    snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d",
+             time.getHour(), time.getMinute(), time.getSecond());
+    return String(buffer);
+}
+
+LocalTime local_time;

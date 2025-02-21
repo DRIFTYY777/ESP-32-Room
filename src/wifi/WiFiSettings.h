@@ -25,6 +25,7 @@ public:
     void heading(const String &contents, bool escape = true);
     void warning(const String &contents, bool escape = true);
     void info(const String &contents, bool escape = true);
+    bool isPassword();
 
     String hostname;
     String password;

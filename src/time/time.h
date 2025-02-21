@@ -13,7 +13,8 @@ private:
     WiFiUDP udp;
 
 public:
-    LocalTime(const char *ntpServer = "pool.ntp.org", int offsetSec = 19800, int updateInterval = 60000)
+    LocalTime(const char *ntpServer = "pool.ntp.org",
+              int offsetSec = 19800, int updateInterval = 60000)
         : ntp(udp, ntpServer, offsetSec, updateInterval)
     {
     }
@@ -21,6 +22,9 @@ public:
     void syncWithNTP();
     String getFormattedTime();
     bool isWiFiConnected();
+    String timeAMPM();
+    String time24();
 };
+extern LocalTime local_time;
 
 #endif
